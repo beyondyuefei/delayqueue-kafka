@@ -7,7 +7,7 @@ import java.time.Duration
 import java.util.Properties
 import java.util.concurrent.TimeUnit
 
-class DelayQueueService(kafkaConfig: Map[String, String]) {
+class DelayQueueService private(kafkaConfig: Map[String, String]) {
   private val delayQueueTopic = "Delay_Queue_Topic"
   private val props = new Properties()
   kafkaConfig.foreach { case (k, v) => props.setProperty(k, v) }
