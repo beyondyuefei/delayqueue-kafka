@@ -6,8 +6,10 @@ import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import java.time.Duration
 import java.util.Properties
 import java.util.concurrent.TimeUnit
+import scala.collection.mutable
 
-class DelayQueueService private(kafkaConfig: Map[String, String]) {
+// todo: mutable -> immutable
+class DelayQueueService private(kafkaConfig: mutable.Map[String, String]) {
   private val delayQueueTopic = "Delay_Queue_Topic"
   private val props = new Properties()
   kafkaConfig.foreach { case (k, v) => props.setProperty(k, v) }
@@ -29,7 +31,7 @@ class DelayQueueService private(kafkaConfig: Map[String, String]) {
 object DelayQueueService {
   @volatile private var instance: Option[DelayQueueService] = None
 
-  def get(kafkaConfig: Map[String, String]): DelayQueueService = {
+  def get(kafkaConfig: mutable.Map[String, String]): DelayQueueService = {
     if (instance.isEmpty) {
       synchronized {
         if (instance.isEmpty) {
