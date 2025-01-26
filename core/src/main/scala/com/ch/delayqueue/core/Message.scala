@@ -6,4 +6,4 @@ package com.ch.delayqueue.core
  * @param id 消息唯一标识
  * @param value 消息内容
  */
-class Message(val namespace: String, val id: String, val value: String)
+case class Message(namespace: String, id: String, value: String)
