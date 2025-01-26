@@ -1,7 +1,7 @@
 package com.ch.delayqueue.core
 
 import com.alibaba.fastjson2.JSON
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
 
 import java.time.Duration
 import java.util.Properties
@@ -15,10 +15,9 @@ class DelayQueueService private(kafkaConfig: mutable.Map[String, String]) {
   kafkaConfig.foreach { case (k, v) => props.setProperty(k, v) }
   private val kafkaProducer = new KafkaProducer[String, String](props)
 
-  def executeWithFixedDelay(message: Message, delaySeconds: Long): Unit = {
-    val producerRecord = new ProducerRecord[String, String](delayQueueTopic, message.id, JSON.toJSONString(new StreamMessage(delaySeconds, message.id, message.value)))
-    val recordMetadata = kafkaProducer.send(producerRecord).get(1, TimeUnit.SECONDS)
-    println(s"${recordMetadata.topic()}, ${recordMetadata.partition()}, ${recordMetadata.offset()}")
+  def executeWithFixedDelay(message: Message, delaySeconds: Long): RecordMetadata = {
+    val producerRecord = new ProducerRecord[String, String](delayQueueTopic, message.id, JSON.toJSONString(StreamMessage(delaySeconds, message.id, message.value)))
+    kafkaProducer.send(producerRecord).get(1, TimeUnit.SECONDS)
   }
 
   Runtime.getRuntime.addShutdownHook(new Thread {

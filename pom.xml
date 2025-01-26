@@ -9,6 +9,13 @@
     <module>core</module>
     <module>starter</module>
   </modules>
+
+  <properties>
+    <java.version>21</java.version>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+  </properties>
+
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -41,18 +48,37 @@
         <artifactId>slf4j-api</artifactId>
         <version>2.0.16</version>
       </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>5.10.5</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
   <build>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.13.0</version>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>4.5.6</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
         <configuration>
-          <source>21</source>
-          <target>21</target>
+          <scalaVersion>2.13.16</scalaVersion>
+          <jvmArgs>
+            <jvmArg>-source</jvmArg>
+            <jvmArg>21</jvmArg>
+            <jvmArg>-target</jvmArg>
+            <jvmArg>21</jvmArg>
+          </jvmArgs>
         </configuration>
       </plugin>
     </plugins>
