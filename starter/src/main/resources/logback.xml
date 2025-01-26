@@ -16,4 +16,8 @@
     <root level="INFO">
         <appender-ref ref="CONSOLE" />
     </root>
+
+    <logger name="com.ch.delayqueue.core" level="debug" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
 </configuration>

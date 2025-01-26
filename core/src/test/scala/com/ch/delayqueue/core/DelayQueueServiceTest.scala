@@ -11,7 +11,7 @@ class DelayQueueServiceTest {
         "key.serializer" -> "org.apache.kafka.common.serialization.StringSerializer",
         "value.serializer" -> "org.apache.kafka.common.serialization.StringSerializer")
 
-      val record = DelayQueueService.get(kafkaConfig).executeWithFixedDelay(new Message("test", "5", "def"), 10)
+      val record = DelayQueueService.get(kafkaConfig).executeWithFixedDelay(Message("test", "10", "def"), 10)
       Assertions.assertNotNull(record)
       Assertions.assertNotNull(record.partition())
       Assertions.assertNotNull(record.offset())
