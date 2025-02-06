@@ -2,7 +2,7 @@ package com.ch.delayqueue.core
 
 import com.alibaba.fastjson2.JSON
 import com.ch.delayqueue.core.internal.StreamMessage
-import com.ch.delayqueue.core.common.Constants.delayQueueTopic
+import com.ch.delayqueue.core.common.Constants.delayQueueInputTopic
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
 import org.slf4j.LoggerFactory
 
@@ -19,16 +19,14 @@ class DelayQueueService private(kafkaConfig: mutable.Map[String, String]) {
   private val logger = LoggerFactory.getLogger(DelayQueueService.getClass)
 
   def executeWithFixedDelay(message: Message, delaySeconds: Long): RecordMetadata = {
-    val producerRecord = new ProducerRecord[String, String](delayQueueTopic, message.id, JSON.toJSONString(StreamMessage(delaySeconds, message.id, message.value, message.namespace)))
+    val producerRecord = new ProducerRecord[String, String](delayQueueInputTopic, message.id, JSON.toJSONString(StreamMessage(delaySeconds,System.currentTimeMillis(), message.value, message.namespace)))
     val recordMetadata = kafkaProducer.send(producerRecord).get(1, TimeUnit.SECONDS)
     if (logger.isDebugEnabled()) logger.debug(s"topic:${recordMetadata.topic()}, partition:${recordMetadata.partition()}, offset:${recordMetadata.offset()}")
     recordMetadata
   }
 
-  Runtime.getRuntime.addShutdownHook(new Thread {
-    override def run(): Unit = {
-      kafkaProducer.close(Duration.ofSeconds(3))
-    }
+  sys.addShutdownHook({
+    kafkaProducer.close(Duration.ofSeconds(3))
   })
 }
 

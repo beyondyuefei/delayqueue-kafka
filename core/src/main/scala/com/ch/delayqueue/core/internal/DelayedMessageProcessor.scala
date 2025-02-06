@@ -1,5 +1,6 @@
 package com.ch.delayqueue.core.internal
 
+import com.alibaba.fastjson2.JSON
 import org.apache.kafka.streams.processor.api.{Processor, ProcessorContext, ProcessorSupplier, Record}
 import org.apache.kafka.streams.processor.api
 import org.apache.kafka.streams.state.{KeyValueStore, Stores}
@@ -23,9 +24,11 @@ class DelayedMessageProcessor extends Processor[String, String, String, String] 
       val iterator = store.all()
       while (iterator.hasNext) {
         val entry = iterator.next()
-        if (context.currentSystemTimeMs() - entry.key.toLong >= DELAY_TIME_MS) {
+        val streamMessage:StreamMessage = JSON.parseObject(entry.value, StreamMessage.getClass)
+        if (context.currentSystemTimeMs() - streamMessage.bizTimeInMs >= (streamMessage.delaySeconds * 1000)) {
+          println("message time happened...")
           // 延迟时间到达，处理消息
-          context.forward(new Record[String, String](entry.key, entry.value, entry.key.toLong))
+          context.forward(new Record[String, String](entry.key, entry.value, context.currentSystemTimeMs()))
           store.delete(entry.key)
         }
       }
@@ -34,8 +37,8 @@ class DelayedMessageProcessor extends Processor[String, String, String, String] 
   }
 
   override def process(record: api.Record[String, String]): Unit = {
-    // 存储消息，并记录当前时间戳作为键
-    store.put(context.currentSystemTimeMs().toString, record.toString)
+    // 存储消息
+    store.put(record.key(), record.value())
   }
 
   override def close(): Unit = {
