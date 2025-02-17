@@ -1,18 +1,16 @@
 package com.ch.delayqueue.core
 
 import com.alibaba.fastjson2.JSON
-import com.ch.delayqueue.core.internal.StreamMessage
 import com.ch.delayqueue.core.common.Constants.delayQueueInputTopic
+import com.ch.delayqueue.core.internal.StreamMessage
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
 import org.slf4j.LoggerFactory
 
 import java.time.Duration
 import java.util.Properties
 import java.util.concurrent.TimeUnit
-import scala.collection.mutable
 
-// todo: mutable -> immutable
-class DelayQueueService private(kafkaConfig: mutable.Map[String, String]) {
+class DelayQueueService private(kafkaConfig: Map[String, String]) {
   private val props = new Properties()
   kafkaConfig.foreach { case (k, v) => props.setProperty(k, v) }
   private val kafkaProducer = new KafkaProducer[String, String](props)
@@ -33,7 +31,7 @@ class DelayQueueService private(kafkaConfig: mutable.Map[String, String]) {
 object DelayQueueService {
   @volatile private var instance: Option[DelayQueueService] = None
 
-  def get(kafkaConfig: mutable.Map[String, String]): DelayQueueService = {
+  def get(kafkaConfig: Map[String, String]): DelayQueueService = {
     if (instance.isEmpty) {
       synchronized {
         if (instance.isEmpty) {

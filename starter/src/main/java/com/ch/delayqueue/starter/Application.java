@@ -18,7 +18,7 @@ public class Application {
         Map<String, String> kafkaConfig = Map.of("bootstrap.servers","localhost:9092", "linger.ms" ,"1",
                 "key.serializer" ,"org.apache.kafka.common.serialization.StringSerializer",
                 "value.serializer","org.apache.kafka.common.serialization.StringSerializer");
-        DelayQueueService.get(CollectionConverters.MapHasAsScala((kafkaConfig)).asScala()).executeWithFixedDelay(new Message("test", "4", "def"), 10);
+        DelayQueueService.get(scala.collection.immutable.Map.from(CollectionConverters.MapHasAsScala((kafkaConfig)).asScala())).executeWithFixedDelay(new Message("test", "4", "def"), 10);
         log.info("send message success");
     }
 }

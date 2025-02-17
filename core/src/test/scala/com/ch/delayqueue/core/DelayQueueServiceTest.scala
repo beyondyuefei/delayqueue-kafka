@@ -7,7 +7,7 @@ import scala.collection.mutable
 class DelayQueueServiceTest {
     @Test
     def sendMessageTest():Unit = {
-      val kafkaConfig = mutable.Map("bootstrap.servers" -> "localhost:9092", "linger.ms" -> "1",
+      val kafkaConfig = Map("bootstrap.servers" -> "localhost:9092", "linger.ms" -> "1",
         "key.serializer" -> "org.apache.kafka.common.serialization.StringSerializer",
         "value.serializer" -> "org.apache.kafka.common.serialization.StringSerializer")
 
