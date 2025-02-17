@@ -13,7 +13,7 @@ import java.util.Properties
 
 
 object StreamMessageDispatcher {
-  def dispatch(): Unit = {
+  def dispatch(kafkaConfig: Map[String, String]): Unit = {
     val streamsBuilder = new StreamsBuilder()
     // 定义状态存储
     val storeSupplier = Stores.keyValueStoreBuilder(
@@ -25,11 +25,15 @@ object StreamMessageDispatcher {
     streamsBuilder.addStateStore(storeSupplier)
     // 创建 KStream
     val stream = streamsBuilder.stream[String, String](delayQueueInputTopic)
-    val processorSupplier: ProcessorSupplier[String, String, String, String] = () => new DelayedMessageProcessor()
+    val delayedMessageSchedulerProcessor: ProcessorSupplier[String, String, String, String] = () => new DelayedMessageSchedulerProcessor()
+    val delayedMessageOutTopicProducerProcessor: ProcessorSupplier[String, String, String, String] = () => new DelayedMessageOutTopicProducerProcessor(kafkaConfig)
     // 使用自定义处理器进行处理
-    stream.process(processorSupplier, storeName)
+    stream.process(delayedMessageSchedulerProcessor, storeName)
+      .process(delayedMessageOutTopicProducerProcessor)
     // 输出到输出主题
-    stream.to(delayQueueOutputTopic)
+    //stream.to(delayQueueOutputTopic)
+
+    println(streamsBuilder.build().describe())
 
     // 配置 Kafka Streams
     val props = new Properties()
@@ -41,6 +45,7 @@ object StreamMessageDispatcher {
     val streams = new KafkaStreams(streamsBuilder.build(), props)
     // 启动 Kafka Streams
     streams.start()
+
 
     // 注册关闭钩子，确保程序优雅关闭
     sys.ShutdownHookThread {

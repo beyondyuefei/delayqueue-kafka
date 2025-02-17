@@ -5,6 +5,8 @@ import com.ch.delayqueue.core.common.Constants.delayQueueInputTopic
 import com.ch.delayqueue.core.internal.StreamMessage
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
 import org.slf4j.LoggerFactory
+import io.circe.generic.auto._
+import io.circe.syntax._
 
 import java.time.Duration
 import java.util.Properties
@@ -17,7 +19,8 @@ class DelayQueueService private(kafkaConfig: Map[String, String]) {
   private val logger = LoggerFactory.getLogger(DelayQueueService.getClass)
 
   def executeWithFixedDelay(message: Message, delaySeconds: Long): RecordMetadata = {
-    val producerRecord = new ProducerRecord[String, String](delayQueueInputTopic, message.id, JSON.toJSONString(StreamMessage(delaySeconds,System.currentTimeMillis(), message.value, message.namespace)))
+    val jsonStrVal = StreamMessage(delaySeconds, System.currentTimeMillis(), message.value, message.namespace).asJson.noSpaces
+    val producerRecord = new ProducerRecord[String, String](delayQueueInputTopic, message.id, jsonStrVal)
     val recordMetadata = kafkaProducer.send(producerRecord).get(1, TimeUnit.SECONDS)
     if (logger.isDebugEnabled()) logger.debug(s"topic:${recordMetadata.topic()}, partition:${recordMetadata.partition()}, offset:${recordMetadata.offset()}")
     recordMetadata
