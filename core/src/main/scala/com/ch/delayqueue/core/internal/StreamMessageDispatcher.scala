@@ -26,10 +26,10 @@ object StreamMessageDispatcher {
     // 创建 KStream
     val stream = streamsBuilder.stream[String, String](delayQueueInputTopic)
     val delayedMessageSchedulerProcessor: ProcessorSupplier[String, String, String, String] = () => new DelayedMessageSchedulerProcessor()
-    val delayedMessageOutTopicProducerProcessor: ProcessorSupplier[String, String, String, String] = () => new DelayedMessageOutTopicProducerProcessor(kafkaConfig)
+    val delayedMessageOutputTopicProducerProcessor: ProcessorSupplier[String, String, String, String] = () => new DelayedMessageOutputTopicProducerProcessor(kafkaConfig)
     // 使用自定义处理器进行处理
     stream.process(delayedMessageSchedulerProcessor, storeName)
-      .process(delayedMessageOutTopicProducerProcessor)
+      .process(delayedMessageOutputTopicProducerProcessor)
     // 输出到输出主题
     //stream.to(delayQueueOutputTopic)
 

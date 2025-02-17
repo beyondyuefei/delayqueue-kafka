@@ -2,7 +2,7 @@ package com.ch.delayqueue.starter;
 
 import com.ch.delayqueue.core.Message;
 import com.ch.delayqueue.core.DelayQueueService;
-import com.ch.delayqueue.core.internal.DelayedMessageOutTopicConsumer;
+import com.ch.delayqueue.core.internal.DelayedMessageOutputTopicConsumer;
 import com.ch.delayqueue.core.internal.StreamMessageDispatcher;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -33,9 +33,9 @@ public class Application {
         DelayQueueService.get(scalaKafkaConfig).executeWithFixedDelay(new Message("test", "1", "def" + ThreadLocalRandom.current().nextLong(9999)), 3);
         DelayQueueService.get(scalaKafkaConfig).executeWithFixedDelay(new Message("test", "2", "def" + ThreadLocalRandom.current().nextLong(9999)), 3);
         log.info("send message success");
-        final DelayedMessageOutTopicConsumer delayedMessageOutTopicConsumer = new DelayedMessageOutTopicConsumer(scalaKafkaConfig);
+        final DelayedMessageOutputTopicConsumer delayedMessageOutputTopicConsumer = new DelayedMessageOutputTopicConsumer(scalaKafkaConfig);
         try (ExecutorService executorService = Executors.newSingleThreadExecutor()) {
-            executorService.execute(delayedMessageOutTopicConsumer::consume);
+            executorService.execute(delayedMessageOutputTopicConsumer::consume);
             log.info("consume message success");
         } catch (Exception e) {
             log.error("consume message error:{}", e.getMessage());

@@ -1,6 +1,6 @@
 package com.ch.delayqueue.core
 
-import com.ch.delayqueue.core.internal.{DelayedMessageOutTopicConsumer, StreamMessageDispatcher}
+import com.ch.delayqueue.core.internal.{DelayedMessageOutputTopicConsumer, StreamMessageDispatcher}
 import org.junit.jupiter.api.{Assertions, Test}
 
 import scala.collection.mutable
@@ -14,7 +14,7 @@ class DelayQueueServiceTest {
       "key.deserializer" -> "org.apache.kafka.common.serialization.StringDeserializer",
       "value.deserializer" -> "org.apache.kafka.common.serialization.StringDeserializer")
 
-    StreamMessageDispatcher.dispatch()
+    StreamMessageDispatcher.dispatch(kafkaConfig)
 
     val record = DelayQueueService.get(kafkaConfig).executeWithFixedDelay(Message("test", "11", "def"), 10)
     Assertions.assertNotNull(record)
@@ -22,7 +22,7 @@ class DelayQueueServiceTest {
     Assertions.assertNotNull(record.offset())
     println(s"topic:${record.topic()}, partition:${record.partition()}, offset:${record.offset()}")
 
-    val sinkProcessor = new DelayedMessageOutTopicConsumer(kafkaConfig)
+    val sinkProcessor = new DelayedMessageOutputTopicConsumer(kafkaConfig)
     sinkProcessor.consume()
   }
 }

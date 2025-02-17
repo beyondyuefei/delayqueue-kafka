@@ -10,11 +10,11 @@ import org.slf4j.LoggerFactory
 import java.util.Properties
 import java.util.concurrent.TimeUnit
 
-class DelayedMessageOutTopicProducerProcessor(kafkaConfig: Map[String, String]) extends Processor[String, String, String, String] {
+class DelayedMessageOutputTopicProducerProcessor(kafkaConfig: Map[String, String]) extends Processor[String, String, String, String] {
   private val props = new Properties()
   kafkaConfig.foreach { case (k, v) => props.setProperty(k, v) }
   private val kafkaProducer = new KafkaProducer[String, String](props)
-  private val logger = LoggerFactory.getLogger(classOf[DelayedMessageOutTopicProducerProcessor])
+  private val logger = LoggerFactory.getLogger(classOf[DelayedMessageOutputTopicProducerProcessor])
 
   override def init(context: ProcessorContext[String, String]): Unit = {
   }

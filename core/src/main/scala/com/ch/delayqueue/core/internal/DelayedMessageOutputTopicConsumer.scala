@@ -8,7 +8,7 @@ import java.time.Duration
 import java.util.Properties
 import scala.jdk.javaapi.CollectionConverters
 
-class DelayedMessageOutTopicConsumer(kafkaConfig: Map[String, String]) {
+class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String]) {
   private val props = new Properties()
   kafkaConfig.foreach { case (k, v) => props.setProperty(k, v) }
   private val kafkaConsumer = new KafkaConsumer[String, String](props)

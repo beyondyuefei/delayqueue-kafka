@@ -14,7 +14,6 @@ import java.time.Duration
 class DelayedMessageSchedulerProcessor extends Processor[String, String, String, String] {
   private var context: ProcessorContext[String, String] = _
   private var store: KeyValueStore[String, String] = _
-  private val DELAY_TIME_MS: Long = 5000 // 延迟时间，单位为毫秒
   private val logger = LoggerFactory.getLogger(classOf[DelayedMessageSchedulerProcessor])
 
   override def init(context: api.ProcessorContext[String, String]): Unit = {
