@@ -13,7 +13,7 @@ import java.util.Properties
 
 
 object StreamMessageDispatcher {
-  def dispatch(kafkaConfig: Map[String, String]): Unit = {
+  def dispatch(): Unit = {
     val streamsBuilder = new StreamsBuilder()
     // 定义状态存储
     val storeSupplier = Stores.keyValueStoreBuilder(
@@ -23,15 +23,11 @@ object StreamMessageDispatcher {
     )
 
     streamsBuilder.addStateStore(storeSupplier)
-    // 创建 KStream
-    val stream = streamsBuilder.stream[String, String](delayQueueInputTopic)
     val delayedMessageSchedulerProcessor: ProcessorSupplier[String, String, String, String] = () => new DelayedMessageSchedulerProcessor()
-    val delayedMessageOutputTopicProducerProcessor: ProcessorSupplier[String, String, String, String] = () => new DelayedMessageOutputTopicProducerProcessor(kafkaConfig)
-    // 使用自定义处理器进行处理
-    stream.process(delayedMessageSchedulerProcessor, storeName)
-      .process(delayedMessageOutputTopicProducerProcessor)
-    // 输出到输出主题
-    //stream.to(delayQueueOutputTopic)
+    // 创建 KStream
+    streamsBuilder.stream[String, String](delayQueueInputTopic)
+      .process(delayedMessageSchedulerProcessor, storeName)
+      .to(delayQueueOutputTopic)
 
     println(streamsBuilder.build().describe())
 

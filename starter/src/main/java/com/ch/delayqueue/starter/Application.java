@@ -29,9 +29,9 @@ public class Application {
                 ConsumerConfig.GROUP_ID_CONFIG, "delayqueue-consumer-group");
 
         final scala.collection.immutable.Map<String, String> scalaKafkaConfig = scala.collection.immutable.Map.from(CollectionConverters.MapHasAsScala((kafkaConfig)).asScala());
-        StreamMessageDispatcher.dispatch(scalaKafkaConfig);
-        DelayQueueService.get(scalaKafkaConfig).executeWithFixedDelay(new Message("test", "1", "def" + ThreadLocalRandom.current().nextLong(9999)), 3);
-        DelayQueueService.get(scalaKafkaConfig).executeWithFixedDelay(new Message("test", "2", "def" + ThreadLocalRandom.current().nextLong(9999)), 3);
+        StreamMessageDispatcher.dispatch();
+        DelayQueueService.get(scalaKafkaConfig).executeWithFixedDelay(new Message("test", "3", "def" + ThreadLocalRandom.current().nextLong(9999)), 3);
+        DelayQueueService.get(scalaKafkaConfig).executeWithFixedDelay(new Message("test", "4", "def" + ThreadLocalRandom.current().nextLong(9999)), 3);
         log.info("send message success");
         final DelayedMessageOutputTopicConsumer delayedMessageOutputTopicConsumer = new DelayedMessageOutputTopicConsumer(scalaKafkaConfig);
         try (ExecutorService executorService = Executors.newSingleThreadExecutor()) {
