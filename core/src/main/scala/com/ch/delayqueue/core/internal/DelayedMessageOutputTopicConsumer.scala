@@ -1,5 +1,6 @@
 package com.ch.delayqueue.core.internal
 
+import com.ch.delayqueue.core.{DelayQueueService, Message}
 import com.ch.delayqueue.core.common.Constants
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.slf4j.LoggerFactory
@@ -20,6 +21,11 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String]) {
       val records = kafkaConsumer.poll(Duration.ofSeconds(1))
       logger.debug(s"consume ${records.count()} records")
       records.forEach(record => {
+        val message = Message("", "", "")
+        DelayQueueService.getCallbacks.get("asdsa") match {
+          case Some(callback) => callback(message)
+          case None => logger.error(s"no callback for message: ${record.value()}")
+        }
         logger.info(s"consume message: ${record.value()}, ${record.key()}")
       })
     }
