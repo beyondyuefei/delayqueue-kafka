@@ -30,8 +30,11 @@ public class Application {
 
         final scala.collection.immutable.Map<String, String> scalaKafkaConfig = scala.collection.immutable.Map.from(CollectionConverters.MapHasAsScala((kafkaConfig)).asScala());
         StreamMessageDispatcher.dispatch();
-        DelayQueueService.getInstance(scalaKafkaConfig).executeWithFixedDelay(new Message("test", "3", "def" + ThreadLocalRandom.current().nextLong(9999)), 3);
-        DelayQueueService.getInstance(scalaKafkaConfig).executeWithFixedDelay(new Message("test", "4", "def" + ThreadLocalRandom.current().nextLong(9999)), 3);
+        final DelayQueueService delayQueueService = DelayQueueService.getInstance(scalaKafkaConfig);
+        final String orderNamespace = "order_pay_timeout";
+        delayQueueService.registerCallback(orderNamespace, message -> {log.info("order_pay_timeout namespace callback value:{}", message.value()); return null;});
+        delayQueueService.executeWithFixedDelay(new Message(orderNamespace, "1", "def123_" + ThreadLocalRandom.current().nextLong(9999)), 3);
+        delayQueueService.executeWithFixedDelay(new Message(orderNamespace, "2", "def456_" + ThreadLocalRandom.current().nextLong(9999)), 10);
         log.info("send message success");
         final DelayedMessageOutputTopicConsumer delayedMessageOutputTopicConsumer = new DelayedMessageOutputTopicConsumer(scalaKafkaConfig);
         try (ExecutorService executorService = Executors.newSingleThreadExecutor()) {

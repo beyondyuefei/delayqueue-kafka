@@ -30,12 +30,12 @@ class DelayedMessageSchedulerProcessor extends Processor[String, String, String,
           streamMessageResult match {
             case Right(streamMessage) =>
               if ((context.currentSystemTimeMs() - streamMessage.bizTimeInMs) >= (streamMessage.delaySeconds * 1000)) {
-                logger.debug(s"message time happened..., value:${streamMessage.value}")
+                logger.debug(s"message time happened..., value:${streamMessage.message}")
                 // 延迟时间到达，处理消息
                 context.forward(new api.Record[String, String](entry.key, entry.value, context.currentSystemTimeMs()))
                 store.delete(entry.key)
               } else {
-                logger.debug(s"message time not~~ happened..., value:${streamMessage.value}")
+                logger.debug(s"message time not~~ happened..., value:${streamMessage.message}")
               }
 
             case Left(error) =>

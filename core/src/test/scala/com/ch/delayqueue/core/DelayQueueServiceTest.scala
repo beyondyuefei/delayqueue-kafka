@@ -3,8 +3,6 @@ package com.ch.delayqueue.core
 import com.ch.delayqueue.core.internal.{DelayedMessageOutputTopicConsumer, StreamMessageDispatcher}
 import org.junit.jupiter.api.{Assertions, Test}
 
-import scala.collection.mutable
-
 class DelayQueueServiceTest {
   @Test
   def sendMessageTest(): Unit = {
@@ -16,7 +14,10 @@ class DelayQueueServiceTest {
 
     StreamMessageDispatcher.dispatch()
 
-    val record = DelayQueueService.getInstance(kafkaConfig).executeWithFixedDelay(Message("test", "11", "def"), 10)
+    val delayQueueService = DelayQueueService.getInstance(kafkaConfig)
+    val orderNamespace = "order_pay_timeout"
+    delayQueueService.registerCallback(orderNamespace, msg => {println(s"in callback ${msg.value}")})
+    val record = delayQueueService.executeWithFixedDelay(Message(orderNamespace, "11", "def"), 10)
     Assertions.assertNotNull(record)
     Assertions.assertNotNull(record.partition())
     Assertions.assertNotNull(record.offset())

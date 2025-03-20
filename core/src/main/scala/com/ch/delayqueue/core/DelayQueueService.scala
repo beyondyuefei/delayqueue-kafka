@@ -13,25 +13,29 @@ import java.util.concurrent.TimeUnit
 import scala.collection.{immutable, mutable}
 
 class DelayQueueService private(kafkaConfig: Map[String, String]) {
-  private val props = new Properties()
-  kafkaConfig.foreach { case (k, v) => props.setProperty(k, v) }
+  private val props = {
+    val p = new Properties()
+    kafkaConfig.foreach { case (k, v) => p.setProperty(k, v) }
+    p
+  }
   private val kafkaProducer = new KafkaProducer[String, String](props)
-  private val callbacks = mutable.Map[String, Message => Unit]()
+  private type Callback = Message => Unit
+  private val callbacks = mutable.Map[String, Callback]()
   private val logger = LoggerFactory.getLogger(DelayQueueService.getClass)
 
   def executeWithFixedDelay(message: Message, delaySeconds: Long): RecordMetadata = {
-    val jsonStrVal = StreamMessage(delaySeconds, System.currentTimeMillis(), message.value, message.namespace).asJson.noSpaces
+    val jsonStrVal = StreamMessage(delaySeconds, System.currentTimeMillis(), message).asJson.noSpaces
     val producerRecord = new ProducerRecord[String, String](delayQueueInputTopic, message.id, jsonStrVal)
     val recordMetadata = kafkaProducer.send(producerRecord).get(1, TimeUnit.SECONDS)
     if (logger.isDebugEnabled()) logger.debug(s"topic:${recordMetadata.topic()}, partition:${recordMetadata.partition()}, offset:${recordMetadata.offset()}")
     recordMetadata
   }
 
-  def registerCallbackFunction(namespace: String, callback: Message => Unit): Unit = {
+  def registerCallback(namespace: String, callback: Callback): Unit = {
     callbacks += (namespace -> callback)
   }
 
-  def getCallback: immutable.Map[String, Message => Unit] = callbacks.toMap
+  private def getCallback: immutable.Map[String, Callback] = callbacks.toMap
 
   sys.addShutdownHook({
     kafkaProducer.close(Duration.ofSeconds(3))
