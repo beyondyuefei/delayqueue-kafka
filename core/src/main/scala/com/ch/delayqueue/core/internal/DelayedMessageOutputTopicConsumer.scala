@@ -54,7 +54,7 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String]) {
                   case Success(_) => logger.info(s"execute callback for message success: $message")
                   case Failure(ex) => logger.error(s"execute callback for message failed: $message", ex)
                 }
-              case None => logger.error(s"no callback for message: ${record.value()}")
+              case None => logger.error(s"no callback found for message: $message")
             }
           case Left(error) => logger.error(s"decode streamMessage error, error:$error")
         }
