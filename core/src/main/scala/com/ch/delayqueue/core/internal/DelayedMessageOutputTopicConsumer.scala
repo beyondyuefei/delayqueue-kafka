@@ -9,9 +9,8 @@ import org.slf4j.LoggerFactory
 
 import java.time.Duration
 import java.util.Properties
-import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.{Executors, LinkedBlockingQueue, ThreadFactory, ThreadPoolExecutor, TimeUnit}
-import scala.concurrent.{ExecutionContext, Future}
+import CallbackThreadPool.executionContext
+import scala.concurrent.Future
 import scala.jdk.javaapi.CollectionConverters
 import scala.util.{Failure, Success}
 
@@ -21,16 +20,6 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String]) {
     kafkaConfig.foreach { case (k, v) => p.setProperty(k, v) }
     p
   }
-  private val threadNum = new AtomicLong(1)
-  private val callbackThreadPool = new ThreadPoolExecutor(100, 100, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue[Runnable](1000), new ThreadFactory {
-    override def newThread(r: Runnable): Thread = {
-      val thread = new Thread(r)
-      thread.setName(s"delayQueue-callback-thread-${threadNum.getAndIncrement()}")
-      thread.setDaemon(false)
-      thread
-    }
-  })
-  implicit private val ec: ExecutionContext = ExecutionContext.fromExecutor(callbackThreadPool)
   private val kafkaConsumer = new KafkaConsumer[String, String](props)
   private val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -62,5 +51,7 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String]) {
     }
   }
 
-  sys.addShutdownHook(() => kafkaConsumer.close())
+  sys.addShutdownHook(() => {
+    kafkaConsumer.close()
+  })
 }
