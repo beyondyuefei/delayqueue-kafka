@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.Properties
 import java.util.concurrent.TimeUnit
-import scala.collection.{immutable, mutable}
+import scala.collection.immutable
 
 class DelayQueueService private(kafkaConfig: Map[String, String]) {
   private val props = {
@@ -20,7 +20,7 @@ class DelayQueueService private(kafkaConfig: Map[String, String]) {
   }
   private val kafkaProducer = new KafkaProducer[String, String](props)
   private type Callback = Message => Unit
-  private val callbacks = mutable.Map[String, Callback]()
+  private var callbacks = Map[String, Callback]()
   private val logger = LoggerFactory.getLogger(DelayQueueService.getClass)
 
   def executeWithFixedDelay(message: Message, delaySeconds: Long): RecordMetadata = {
@@ -35,7 +35,7 @@ class DelayQueueService private(kafkaConfig: Map[String, String]) {
     callbacks += (namespace -> callback)
   }
 
-  private def getCallback: immutable.Map[String, Callback] = callbacks.toMap
+  private def getCallback: Map[String, Callback] = callbacks
 
   sys.addShutdownHook({
     kafkaProducer.close(Duration.ofSeconds(3))
