@@ -12,7 +12,15 @@ import java.time.Duration
 import java.util.Properties
 
 
-object StreamMessageDispatcher {
+object StreamMessageDispatcher extends LifeCycle {
+  override def start(): Unit = {
+
+  }
+
+  override def stop(): Unit = {
+
+  }
+
   def dispatch(): Unit = {
     val streamsBuilder = new StreamsBuilder()
     // 定义状态存储

@@ -1,7 +1,7 @@
 package com.ch.delayqueue.core
 
 import com.ch.delayqueue.core.common.Constants.delayQueueInputTopic
-import com.ch.delayqueue.core.internal.StreamMessage
+import com.ch.delayqueue.core.internal.{CallbackThreadPool, Component, LifeCycle, StreamMessage}
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
@@ -12,7 +12,7 @@ import java.util.Properties
 import java.util.concurrent.TimeUnit
 import scala.collection.immutable
 
-class DelayQueueService private(kafkaConfig: Map[String, String]) {
+class DelayQueueService private(kafkaConfig: Map[String, String]) extends Component {
   private val props = {
     val p = new Properties()
     kafkaConfig.foreach { case (k, v) => p.setProperty(k, v) }
@@ -21,7 +21,18 @@ class DelayQueueService private(kafkaConfig: Map[String, String]) {
   private val kafkaProducer = new KafkaProducer[String, String](props)
   private type Callback = Message => Unit
   private var callbacks = Map[String, Callback]()
+  private var childComponent: List[Component] = List.empty
   private val logger = LoggerFactory.getLogger(DelayQueueService.getClass)
+
+  override def start(): Unit = {
+    childComponent :+= CallbackThreadPool
+    childComponent.foreach(_.start())
+  }
+
+  override def stop(): Unit = {
+    kafkaProducer.close(Duration.ofSeconds(3))
+    childComponent.foreach(_.stop())
+  }
 
   def executeWithFixedDelay(message: Message, delaySeconds: Long): RecordMetadata = {
     val jsonStrVal = StreamMessage(delaySeconds, System.currentTimeMillis(), message).asJson.noSpaces
@@ -36,10 +47,6 @@ class DelayQueueService private(kafkaConfig: Map[String, String]) {
   }
 
   private def getCallback: Map[String, Callback] = callbacks
-
-  sys.addShutdownHook({
-    kafkaProducer.close(Duration.ofSeconds(3))
-  })
 }
 
 object DelayQueueService {

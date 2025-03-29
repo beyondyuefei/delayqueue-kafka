@@ -31,6 +31,7 @@ public class Application {
         final scala.collection.immutable.Map<String, String> scalaKafkaConfig = scala.collection.immutable.Map.from(CollectionConverters.MapHasAsScala((kafkaConfig)).asScala());
         StreamMessageDispatcher.dispatch();
         final DelayQueueService delayQueueService = DelayQueueService.getInstance(scalaKafkaConfig);
+        delayQueueService.start();
         final String orderNamespace = "order_pay_timeout";
         delayQueueService.registerCallback(orderNamespace, message -> {log.info("order_pay_timeout namespace callback value:{}", message.value()); return null;});
         delayQueueService.executeWithFixedDelay(new Message(orderNamespace, "1", "def123_" + ThreadLocalRandom.current().nextLong(9999)), 3);
