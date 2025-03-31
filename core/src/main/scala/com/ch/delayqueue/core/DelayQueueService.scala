@@ -1,7 +1,7 @@
 package com.ch.delayqueue.core
 
 import com.ch.delayqueue.core.common.Constants.delayQueueInputTopic
-import com.ch.delayqueue.core.internal.{CallbackThreadPool, Component, LifeCycle, StreamMessage}
+import com.ch.delayqueue.core.internal.{CallbackThreadPool, Component, StreamMessage}
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}

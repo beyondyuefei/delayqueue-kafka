@@ -12,7 +12,7 @@ import java.time.Duration
 import java.util.Properties
 
 
-object StreamMessageDispatcher extends LifeCycle {
+object StreamMessageDispatcher extends Lifecycle {
   override def start(): Unit = {
 
   }

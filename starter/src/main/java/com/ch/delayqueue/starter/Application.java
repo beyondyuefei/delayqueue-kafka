@@ -37,12 +37,5 @@ public class Application {
         delayQueueService.executeWithFixedDelay(new Message(orderNamespace, "1", "def123_" + ThreadLocalRandom.current().nextLong(9999)), 3);
         delayQueueService.executeWithFixedDelay(new Message(orderNamespace, "2", "def456_" + ThreadLocalRandom.current().nextLong(9999)), 10);
         log.info("send message success");
-        final DelayedMessageOutputTopicConsumer delayedMessageOutputTopicConsumer = new DelayedMessageOutputTopicConsumer(scalaKafkaConfig);
-        try (ExecutorService executorService = Executors.newSingleThreadExecutor()) {
-            executorService.execute(delayedMessageOutputTopicConsumer::consume);
-            log.info("consume message success");
-        } catch (Exception e) {
-            log.error("consume message error:{}", e.getMessage());
-        }
     }
 }
