@@ -2,7 +2,6 @@ package com.ch.delayqueue.starter;
 
 import com.ch.delayqueue.core.Message;
 import com.ch.delayqueue.core.DelayQueueService;
-import com.ch.delayqueue.core.internal.DelayedMessageOutputTopicConsumer;
 import com.ch.delayqueue.core.internal.StreamMessageDispatcher;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -11,8 +10,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import scala.jdk.CollectionConverters;
 
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 
 @SpringBootApplication
