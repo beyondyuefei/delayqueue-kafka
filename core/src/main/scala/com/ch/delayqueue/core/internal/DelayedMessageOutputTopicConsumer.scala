@@ -12,12 +12,12 @@ import org.slf4j.LoggerFactory
 
 import java.time.Duration
 import java.util.Properties
-import java.util.concurrent.{ExecutorService, Executors}
-import scala.concurrent.Future
+import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
+import scala.concurrent.{Await, Future, TimeoutException}
 import scala.jdk.javaapi.CollectionConverters
 import scala.util.{Failure, Success}
 
-class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String]) extends Component {
+class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String], futureTimeoutInSeconds: Long = 1000) extends Component {
   private val props = {
     val p = new Properties()
     kafkaConfig.foreach { case (k, v) => p.setProperty(k, v) }
@@ -50,20 +50,44 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String]) extend
         }
 
         if (!records.isEmpty) {
-          // 2. consume
-          try {
-            consume(records)
+          // 2. consume，execute Callback
+          val futures = try {
+            consumeRecordsWithCallback(records)
           } catch {
             case e: Exception =>
-              logger.error(s"consume records error, error:${e.getMessage}", e)
+              // 在 consumeRecordsWithCallback() 中 不应该 抛出异常，因为：
+              //   1、decode的错误也是封装在Either中
+              //   2、业务Callback的执行是在Future包装的异步线程中执行的
+              // 所以如果走到这里，则说明是框架层面代码出了bug，涉及这批的消息都不会被认为是 已消费，会做重试处理
+              logger.error(s"unexpected error here, message:${e.getMessage}", e)
+              List.empty[Future[Unit]]
           }
 
-          // 3. commit
-          try {
-            kafkaConsumer.commitSync()
-          } catch {
-            case e: Exception =>
-              logger.error(s"kafka commitSync error, error:${e.getMessage}", e)
+          // 3. wait Callback Futures result
+          if (futures.nonEmpty) {
+            val isCallbackExecuted = try {
+              Await.result(Future.sequence(futures), scala.concurrent.duration.Duration(futureTimeoutInSeconds, TimeUnit.SECONDS))
+              true
+            } catch {
+              case e: TimeoutException =>
+                logger.error(s"wait for futures Callback execute timeout, message:${e.getMessage}", e)
+                // 超时时间是用户自己可配置的，因此这里即便业务逻辑执行等待超时，我们仍然认为这个消息的回调在用户侧已经执行完成
+                true
+              case e: Exception =>
+                logger.error(s"wait for futures Callback execute error, message:${e.getMessage}", e)
+                // 非预期的错误，则后续会触发消息的poll重试&回调
+                false
+            }
+
+            if (isCallbackExecuted) {
+              // 4. commit
+              try {
+                kafkaConsumer.commitSync()
+              } catch {
+                case e: Exception =>
+                  logger.error(s"commit error, error:${e.getMessage}", e)
+              }
+            }
           }
         }
       }
@@ -76,8 +100,9 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String]) extend
     executorService.close()
   }
 
-  private def consume(records: ConsumerRecords[String, String]): Unit = {
+  private def consumeRecordsWithCallback(records: ConsumerRecords[String, String]): List[Future[Unit]] = {
     logger.debug(s"consume ${records.count()} records")
+    val futures: List[Future[Unit]] = List.empty
     records.forEach(record => {
       val streamMessageResult = decode[StreamMessage](record.value())
       streamMessageResult match {
@@ -93,10 +118,12 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String]) extend
                 case Success(_) => logger.info(s"execute callback for message success: $message")
                 case Failure(ex) => logger.error(s"execute callback for message failed: $message", ex)
               }
+              futures :+ future
             case None => logger.error(s"no callback found for message: $message")
           }
         case Left(error) => logger.error(s"decode streamMessage error, error:$error")
       }
     })
+    futures
   }
 }
