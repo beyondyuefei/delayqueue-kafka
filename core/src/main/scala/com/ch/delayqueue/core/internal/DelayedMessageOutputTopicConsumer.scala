@@ -65,7 +65,7 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String], future
 
           // 3. wait Callback Futures result
           if (futures.nonEmpty) {
-            val isCallbackExecuted = try {
+            val isCallbacksExecuted = try {
               Await.result(Future.sequence(futures), scala.concurrent.duration.Duration(futureTimeoutInSeconds, TimeUnit.SECONDS))
               true
             } catch {
@@ -79,7 +79,7 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String], future
                 false
             }
 
-            if (isCallbackExecuted) {
+            if (isCallbacksExecuted) {
               // 4. commit
               try {
                 kafkaConsumer.commitSync()
