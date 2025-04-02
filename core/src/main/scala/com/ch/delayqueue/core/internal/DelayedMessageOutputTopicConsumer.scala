@@ -17,7 +17,7 @@ import scala.concurrent.{Await, Future, TimeoutException}
 import scala.jdk.javaapi.CollectionConverters
 import scala.util.{Failure, Success}
 
-class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String], futureTimeoutInSeconds: Long = 1000) extends Component {
+class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String], futureTimeoutInSeconds: Long = 1) extends Component {
   private val props = {
     val p = new Properties()
     kafkaConfig.foreach { case (k, v) => p.setProperty(k, v) }
