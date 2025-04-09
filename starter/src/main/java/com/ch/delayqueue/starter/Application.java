@@ -2,7 +2,6 @@ package com.ch.delayqueue.starter;
 
 import com.ch.delayqueue.core.Message;
 import com.ch.delayqueue.core.DelayQueueService;
-import com.ch.delayqueue.core.internal.StreamMessageDispatcher;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.springframework.boot.SpringApplication;
@@ -26,7 +25,6 @@ public class Application {
                 ConsumerConfig.GROUP_ID_CONFIG, "delayqueue-consumer-group");
 
         final scala.collection.immutable.Map<String, String> scalaKafkaConfig = scala.collection.immutable.Map.from(CollectionConverters.MapHasAsScala((kafkaConfig)).asScala());
-        StreamMessageDispatcher.dispatch();
         final DelayQueueService delayQueueService = DelayQueueService.getInstance(scalaKafkaConfig);
         delayQueueService.start();
         final String orderNamespace = "order_pay_timeout";
