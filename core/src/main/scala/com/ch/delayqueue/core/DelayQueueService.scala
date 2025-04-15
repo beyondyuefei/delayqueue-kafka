@@ -1,7 +1,7 @@
 package com.ch.delayqueue.core
 
 import com.ch.delayqueue.core.common.Constants.delayQueueInputTopic
-import com.ch.delayqueue.core.internal.{CallbackThreadPool, Component, StreamMessage}
+import com.ch.delayqueue.core.internal.{CallbackThreadPool, Component, DelayedMessageOutputTopicConsumer, Lifecycle, StreamMessage, StreamMessageProcessTopologyConfigurator}
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
@@ -12,7 +12,7 @@ import java.util.Properties
 import java.util.concurrent.TimeUnit
 import scala.collection.immutable
 
-class DelayQueueService private(kafkaConfig: Map[String, String]) extends Component {
+class DelayQueueService private(kafkaConfig: Map[String, String]) extends Lifecycle {
   private val props = {
     val p = new Properties()
     kafkaConfig.foreach { case (k, v) => p.setProperty(k, v) }
@@ -21,17 +21,19 @@ class DelayQueueService private(kafkaConfig: Map[String, String]) extends Compon
   private val kafkaProducer = new KafkaProducer[String, String](props)
   private type Callback = Message => Unit
   private var callbacks = Map[String, Callback]()
-  private var childComponent: List[Component] = List.empty
+  private var childComponents: List[Lifecycle] = List.empty
   private val logger = LoggerFactory.getLogger(DelayQueueService.getClass)
 
   override def start(): Unit = {
-    childComponent :+= CallbackThreadPool
-    childComponent.foreach(_.start())
+    childComponents :+= CallbackThreadPool
+    childComponents :+= StreamMessageProcessTopologyConfigurator
+    childComponents :+= new DelayedMessageOutputTopicConsumer(kafkaConfig)
+    childComponents.foreach(_.start())
   }
 
   override def stop(): Unit = {
+    childComponents.foreach(_.stop())
     kafkaProducer.close(Duration.ofSeconds(3))
-    childComponent.foreach(_.stop())
   }
 
   def executeWithFixedDelay(message: Message, delaySeconds: Long): RecordMetadata = {

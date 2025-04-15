@@ -7,7 +7,7 @@ import com.ch.delayqueue.core.internal.exception.LifecycleException
 import io.circe.generic.auto._
 import io.circe.parser.decode
 import org.apache.kafka.clients.consumer.{ConsumerRecords, KafkaConsumer}
-import org.apache.kafka.common.errors.RetriableException
+import org.apache.kafka.common.errors.{RetriableException, WakeupException}
 import org.slf4j.LoggerFactory
 
 import java.time.Duration
@@ -25,28 +25,35 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String], future
   }
   private val kafkaConsumer = new KafkaConsumer[String, String](props)
   private val executorService: ExecutorService = Executors.newSingleThreadExecutor
+  @volatile private var isRunning = true
   private val logger = LoggerFactory.getLogger(this.getClass)
 
   override def start(): Unit = {
     try {
       kafkaConsumer.subscribe(CollectionConverters.asJavaCollection(List(Constants.delayQueueOutputTopic)))
+      logger.info(s"kafka consumer component started, subscribe kafka topic: ${Constants.delayQueueOutputTopic}")
     } catch {
       case e: Exception =>
         logger.error(s"subscribe kafka topic error, error:${e.getMessage}")
         throw new LifecycleException(s"subscribe kafka topic error, message:${e.getMessage}", e)
     }
     executorService.execute(() => {
-      while (true) {
+      while (isRunning) {
         // 1. poll
         val records: ConsumerRecords[String, String] = try {
           kafkaConsumer.poll(Duration.ofSeconds(1))
         } catch {
-          case e: RetriableException =>
-            logger.error(s"kafka poll error, error:${e.getMessage}, retry again", e)
-            ConsumerRecords.empty()
           case e: Exception =>
-            logger.error(s"kafka poll error, error:${e.getMessage}, return from while loop", e)
-            return
+            e match {
+              case _: RetriableException =>
+                logger.error(s"Kafka poll error, error: ${e.getMessage}, retry again", e)
+              case _: WakeupException =>
+                logger.info("Wakeup consumer")
+              case _ =>
+                logger.error(s"Kafka poll error, error: ${e.getMessage}, return from while loop", e)
+                isRunning = false
+            }
+            ConsumerRecords.empty()
         }
 
         if (!records.isEmpty) {
@@ -91,13 +98,22 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String], future
           }
         }
       }
+      kafkaConsumer.close()
+      logger.info("Kafka consumer closed gracefully")
     })
   }
 
   override def stop(): Unit = {
-    // todo: 这里是否需要加一个 try-catch ？ 也抛出LifeCycleException
-    kafkaConsumer.close()
-    executorService.close()
+    try {
+      isRunning = false
+      kafkaConsumer.wakeup()
+      executorService.close()
+    } catch {
+      case e: Exception =>
+        val errorMsg = s"stop kafka consumer component error, message:${e.getMessage}"
+        logger.error(errorMsg, e)
+        throw new LifecycleException(errorMsg, e)
+    }
   }
 
   private def consumeRecordsWithCallback(records: ConsumerRecords[String, String]): List[Future[Unit]] = {

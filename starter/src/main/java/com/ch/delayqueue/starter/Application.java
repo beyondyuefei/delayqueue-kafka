@@ -22,6 +22,7 @@ public class Application {
                 "value.serializer", "org.apache.kafka.common.serialization.StringSerializer",
                 "key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer",
                 "value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer",
+                ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false",
                 ConsumerConfig.GROUP_ID_CONFIG, "delayqueue-consumer-group");
 
         final scala.collection.immutable.Map<String, String> scalaKafkaConfig = scala.collection.immutable.Map.from(CollectionConverters.MapHasAsScala((kafkaConfig)).asScala());

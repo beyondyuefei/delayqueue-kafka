@@ -4,7 +4,7 @@ import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.ExecutionContext
 
-private[core] object CallbackThreadPool extends Component{
+private[core] object CallbackThreadPool extends Lifecycle {
   private val threadNum = new AtomicLong(1)
   // 线程池配置
   private val callbackThreadPool: ThreadPoolExecutor = new ThreadPoolExecutor(
@@ -21,10 +21,6 @@ private[core] object CallbackThreadPool extends Component{
       }
     }
   )
-
-  override def start(): Unit = {
-
-  }
 
   override def stop(): Unit = {
     callbackThreadPool.close()

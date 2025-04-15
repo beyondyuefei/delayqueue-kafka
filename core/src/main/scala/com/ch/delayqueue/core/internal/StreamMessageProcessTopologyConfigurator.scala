@@ -14,7 +14,7 @@ import java.time.Duration
 import java.util.Properties
 
 
-object StreamMessageProcessTopologyConfigurator extends Lifecycle {
+private[core] object StreamMessageProcessTopologyConfigurator extends Component {
   private var streams: KafkaStreams = _
   private val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -45,6 +45,7 @@ object StreamMessageProcessTopologyConfigurator extends Lifecycle {
       streams = new KafkaStreams(streamsBuilder.build(), props)
       // 启动 Kafka Streams
       streams.start()
+      logger.info("Kafka Streams component started")
     } catch {
       case e: Exception =>
         logger.error("Failed to start Kafka Streams", e)
