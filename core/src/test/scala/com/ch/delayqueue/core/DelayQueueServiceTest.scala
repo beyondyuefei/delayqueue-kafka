@@ -6,6 +6,7 @@ import org.junit.jupiter.api.{Assertions, Test}
 class DelayQueueServiceTest {
   @Test
   def sendMessageTest(): Unit = {
+    @volatile var value: Option[String] = Option.empty
     val kafkaConfig = Map("bootstrap.servers" -> "localhost:9092", "linger.ms" -> "1",
       "key.serializer" -> "org.apache.kafka.common.serialization.StringSerializer",
       "value.serializer" -> "org.apache.kafka.common.serialization.StringSerializer",
@@ -18,7 +19,7 @@ class DelayQueueServiceTest {
     val orderNamespace = "order_pay_timeout"
     delayQueueService.registerCallback(orderNamespace, msg => {
       println(s"in callback ${msg.value}")
-      Assertions.assertNotNull(msg.value)
+      value = Some(msg.value)
     })
 
     delayQueueService.start()
@@ -30,7 +31,8 @@ class DelayQueueServiceTest {
     println(s"topic:${record.topic()}, partition:${record.partition()}, offset:${record.offset()}")
     Assertions.assertNotNull(record.offset())
 
-    Thread.sleep(10000)
+    Thread.sleep(6000)
     delayQueueService.stop()
+    Assertions.assertTrue(value.nonEmpty)
   }
 }

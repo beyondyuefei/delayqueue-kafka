@@ -23,6 +23,9 @@ class DelayedMessageSchedulerProcessor extends Processor[String, String, String,
     // 调度定时任务，每隔一段时间检查是否有消息需要处理
     context.schedule(Duration.ofMillis(1000), org.apache.kafka.streams.processor.PunctuationType.WALL_CLOCK_TIME, _ => {
       val iterator = store.all()
+      if (!iterator.hasNext) {
+        logger.debug("store not have message...")
+      }
       while (iterator.hasNext) {
         val entry = iterator.next()
         try {
@@ -53,6 +56,7 @@ class DelayedMessageSchedulerProcessor extends Processor[String, String, String,
 
   override def process(record: api.Record[String, String]): Unit = {
     // 存储消息
+    logger.debug(s"put record to store, key:${record.key()}, value:${record.value()}")
     store.put(record.key(), record.value())
   }
 }

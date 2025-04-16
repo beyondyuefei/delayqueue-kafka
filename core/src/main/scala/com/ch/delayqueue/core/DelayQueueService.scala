@@ -40,7 +40,7 @@ class DelayQueueService private(kafkaConfig: Map[String, String]) extends Lifecy
     val jsonStrVal = StreamMessage(delaySeconds, System.currentTimeMillis(), message).asJson.noSpaces
     val producerRecord = new ProducerRecord[String, String](delayQueueInputTopic, message.id, jsonStrVal)
     val recordMetadata = kafkaProducer.send(producerRecord).get(1, TimeUnit.SECONDS)
-    if (logger.isDebugEnabled()) logger.debug(s"topic:${recordMetadata.topic()}, partition:${recordMetadata.partition()}, offset:${recordMetadata.offset()}")
+    logger.debug(s"topic:${recordMetadata.topic()}, partition:${recordMetadata.partition()}, offset:${recordMetadata.offset()}")
     recordMetadata
   }
 
