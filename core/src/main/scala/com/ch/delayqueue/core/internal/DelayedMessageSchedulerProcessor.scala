@@ -55,9 +55,4 @@ class DelayedMessageSchedulerProcessor extends Processor[String, String, String,
     // 存储消息
     store.put(record.key(), record.value())
   }
-
-  override def close(): Unit = {
-    // 关闭处理器时关闭状态存储
-    store.close()
-  }
 }

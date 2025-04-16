@@ -23,14 +23,14 @@ class DelayQueueServiceTest {
 
     delayQueueService.start()
 
-    val record = delayQueueService.executeWithFixedDelay(Message(orderNamespace, "11", "def"), 10)
+    val record = delayQueueService.executeWithFixedDelay(Message(orderNamespace, "14", "def"), 3)
     Assertions.assertNotNull(record)
     Assertions.assertNotNull(record.partition())
     Assertions.assertNotNull(record.offset())
     println(s"topic:${record.topic()}, partition:${record.partition()}, offset:${record.offset()}")
     Assertions.assertNotNull(record.offset())
 
-    Thread.sleep(3000)
+    Thread.sleep(10000)
     delayQueueService.stop()
   }
 }
