@@ -31,7 +31,8 @@ public class Application {
         final String orderNamespace = "order_pay_timeout";
         delayQueueService.registerCallback(orderNamespace, message -> {log.info("order_pay_timeout namespace callback value:{}", message.value()); return null;});
         delayQueueService.executeWithFixedDelay(new Message(orderNamespace, "1", "def123_" + ThreadLocalRandom.current().nextLong(9999)), 3);
-        delayQueueService.executeWithFixedDelay(new Message(orderNamespace, "2", "def456_" + ThreadLocalRandom.current().nextLong(9999)), 10);
+        delayQueueService.executeWithFixedDelay(new Message(orderNamespace, "2", "def456_" + ThreadLocalRandom.current().nextLong(9999)), 3);
+        delayQueueService.executeWithFixedDelay(new Message(orderNamespace, "3", "def789_" + ThreadLocalRandom.current().nextLong(9999)), 10);
         log.info("send message success");
     }
 }

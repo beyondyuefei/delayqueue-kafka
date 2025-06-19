@@ -15,14 +15,16 @@ class DelayedMessageSchedulerProcessor extends Processor[String, String, String,
   private var context: ProcessorContext[String, String] = _
   private var store: KeyValueStore[String, String] = _
   private val logger = LoggerFactory.getLogger(classOf[DelayedMessageSchedulerProcessor])
+  private val startTime = String.format("%013d", 0)
 
   override def init(context: api.ProcessorContext[String, String]): Unit = {
     this.context = context
     // 初始化状态存储
     store = context.getStateStore(Constants.storeName).asInstanceOf[KeyValueStore[String, String]]
     // 调度定时任务，每隔一段时间检查是否有消息需要处理
-    context.schedule(Duration.ofMillis(1000), org.apache.kafka.streams.processor.PunctuationType.WALL_CLOCK_TIME, _ => {
-      val iterator = store.all()
+    context.schedule(Duration.ofMillis(300), org.apache.kafka.streams.processor.PunctuationType.WALL_CLOCK_TIME, _ => {
+      val endTime = String.format("%013d", System.currentTimeMillis()) + "\uffff"
+      val iterator = store.range(startTime, endTime)
       if (!iterator.hasNext) {
         logger.debug("store not have message...")
       }
@@ -32,15 +34,10 @@ class DelayedMessageSchedulerProcessor extends Processor[String, String, String,
           val streamMessageResult = decode[StreamMessage](entry.value)
           streamMessageResult match {
             case Right(streamMessage) =>
-              if ((context.currentSystemTimeMs() - streamMessage.bizTimeInMs) >= (streamMessage.delaySeconds * 1000)) {
-                logger.debug(s"message time happened..., value:${streamMessage.message}")
-                // 延迟时间到达，处理消息
-                context.forward(new api.Record[String, String](entry.key, entry.value, context.currentSystemTimeMs()))
-                store.delete(entry.key)
-              } else {
-                logger.debug(s"message time not~~ happened..., value:${streamMessage.message}")
-              }
-
+              logger.debug(s"message time happened..., value:${streamMessage.message}")
+              // 延迟时间到达，处理消息
+              context.forward(new api.Record[String, String](entry.key, entry.value, context.currentSystemTimeMs()))
+              store.delete(entry.key)
             case Left(error) =>
               logger.error(s"decode streamMessage error, error:$error")
               store.delete(entry.key)
@@ -55,8 +52,17 @@ class DelayedMessageSchedulerProcessor extends Processor[String, String, String,
   }
 
   override def process(record: api.Record[String, String]): Unit = {
-    // 存储消息
-    logger.debug(s"put record to store, key:${record.key()}, value:${record.value()}")
-    store.put(record.key(), record.value())
+    val streamMessageResult = decode[StreamMessage](record.value)
+    streamMessageResult match {
+      case Right(streamMessage) =>
+        // 固定13位长度补全，按storeKey有序存储和后续范围查询
+        val storeKey = String.format("%013d", System.currentTimeMillis() + streamMessage.delaySeconds * 1000) + "_" + record.key()
+        val storeValue = record.value()
+        // 保存消息到持久化k-v存储系统(RocksDB)
+        store.put(storeKey, storeValue)
+        logger.debug(s"put record to store, storeKey:$storeKey, storeValue:$storeValue")
+      case Left(error) =>
+        logger.error(s"decode streamMessage error, error:$error")
+    }
   }
 }
