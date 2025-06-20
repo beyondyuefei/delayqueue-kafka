@@ -22,7 +22,7 @@ class DelayedMessageSchedulerProcessor extends Processor[String, String, String,
     // 初始化状态存储
     store = context.getStateStore(Constants.storeName).asInstanceOf[KeyValueStore[String, String]]
     // 调度定时任务，每隔一段时间检查是否有消息需要处理
-    context.schedule(Duration.ofMillis(300), org.apache.kafka.streams.processor.PunctuationType.WALL_CLOCK_TIME, _ => {
+    context.schedule(Duration.ofMillis(1000), org.apache.kafka.streams.processor.PunctuationType.WALL_CLOCK_TIME, _ => {
       val endTime = String.format("%013d", System.currentTimeMillis()) + "\uffff"
       val iterator = store.range(startTime, endTime)
       if (!iterator.hasNext) {
@@ -30,39 +30,39 @@ class DelayedMessageSchedulerProcessor extends Processor[String, String, String,
       }
       while (iterator.hasNext) {
         val entry = iterator.next()
-        try {
-          val streamMessageResult = decode[StreamMessage](entry.value)
-          streamMessageResult match {
-            case Right(streamMessage) =>
-              logger.debug(s"message time happened..., value:${streamMessage.message}")
-              // 延迟时间到达，处理消息
-              context.forward(new api.Record[String, String](entry.key, entry.value, context.currentSystemTimeMs()))
-              store.delete(entry.key)
-            case Left(error) =>
-              logger.error(s"decode streamMessage error, error:$error")
-              store.delete(entry.key)
-          }
-
-        } catch {
-          case e: Exception => logger.error(s"process error, error:${e.getMessage}")
-        }
+        decodeMessageAndProcess(entry.value, streamMessage => {
+          logger.debug(s"message time happened..., value:${streamMessage.message}")
+          // 延迟时间到达，处理消息
+          context.forward(new api.Record[String, String](entry.key, entry.value, context.currentSystemTimeMs()))
+        })
+        store.delete(entry.key)
       }
       iterator.close()
     })
   }
 
   override def process(record: api.Record[String, String]): Unit = {
-    val streamMessageResult = decode[StreamMessage](record.value)
-    streamMessageResult match {
-      case Right(streamMessage) =>
-        // 固定13位长度补全，按storeKey有序存储和后续范围查询
-        val storeKey = String.format("%013d", System.currentTimeMillis() + streamMessage.delaySeconds * 1000) + "_" + record.key()
-        val storeValue = record.value()
-        // 保存消息到持久化k-v存储系统(RocksDB)
-        store.put(storeKey, storeValue)
-        logger.debug(s"put record to store, storeKey:$storeKey, storeValue:$storeValue")
-      case Left(error) =>
-        logger.error(s"decode streamMessage error, error:$error")
+    decodeMessageAndProcess(record.value, streamMessage => {
+      // 固定13位长度补全，按storeKey有序存储和后续范围查询
+      val storeKey = String.format("%013d", System.currentTimeMillis() + streamMessage.delaySeconds * 1000) + "_" + record.key()
+      val storeValue = record.value()
+      // 保存消息到持久化k-v存储系统(RocksDB)
+      store.put(storeKey, storeValue)
+      logger.debug(s"put record to store, storeKey:$storeKey, storeValue:$storeValue")
+    })
+  }
+
+  private def decodeMessageAndProcess(recordValue: String, processFunc: StreamMessage => Unit): Unit = {
+    try {
+      val streamMessageResult = decode[StreamMessage](recordValue)
+      streamMessageResult match {
+        case Right(streamMessage) =>
+          processFunc(streamMessage)
+        case Left(error) =>
+          logger.error(s"decode streamMessage error, error:$error")
+      }
+    } catch {
+      case e: Exception => logger.error(s"decodeMessageAndProcess error, error:${e.getMessage}")
     }
   }
 }
