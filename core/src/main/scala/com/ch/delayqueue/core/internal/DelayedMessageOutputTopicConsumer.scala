@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.Properties
 import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
+import scala.:+
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.jdk.javaapi.CollectionConverters
 import scala.util.{Failure, Success}
@@ -122,8 +123,7 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String], future
 
   private def consumeRecordsWithCallback(records: ConsumerRecords[String, String]): List[Future[Unit]] = {
     logger.debug(s"consume ${records.count()} records")
-    var futures: List[Future[Unit]] = List.empty
-    records.forEach(record => {
+    CollectionConverters.asScala(records).foldLeft(List.empty[Future[Unit]]) { (acc, record) => {
       val streamMessageResult = decode[StreamMessage](record.value())
       streamMessageResult match {
         case Right(streamMessage) =>
@@ -138,12 +138,16 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String], future
                 case Success(_) => logger.info(s"execute callback for message success: $message")
                 case Failure(ex) => logger.error(s"execute callback for message failed: $message", ex)
               }
-              futures = futures :+ future
-            case None => logger.error(s"no callback found for message: $message")
+              acc :+ future
+            case None =>
+              logger.error(s"no callback found for message: $message")
+              acc
           }
-        case Left(error) => logger.error(s"decode streamMessage error, error:$error")
+        case Left(error) =>
+          logger.error(s"decode streamMessage error, error:$error")
+          acc
       }
-    })
-    futures
+    }
+    }
   }
 }
