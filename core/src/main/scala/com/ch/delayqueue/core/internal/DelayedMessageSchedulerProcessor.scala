@@ -47,7 +47,9 @@ class DelayedMessageSchedulerProcessor extends Processor[String, String, String,
       val storeKey = String.format("%013d", System.currentTimeMillis() + streamMessage.delaySeconds * 1000) + "_" + record.key()
       val storeValue = record.value()
       // 保存消息到持久化k-v存储系统(RocksDB)
-      store.put(storeKey, storeValue)
+      if (store.putIfAbsent(storeKey, storeValue) != null) {
+        logger.info(s"storeKey:$storeKey already exist, so ignore it, storeValue:$storeValue")
+      }
       logger.debug(s"put record to store, storeKey:$storeKey, storeValue:$storeValue")
     })
   }
