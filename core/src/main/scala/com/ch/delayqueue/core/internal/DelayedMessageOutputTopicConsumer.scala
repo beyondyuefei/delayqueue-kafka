@@ -124,8 +124,7 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String], future
   private def consumeRecordsWithCallback(records: ConsumerRecords[String, String]): List[Future[Unit]] = {
     logger.debug(s"consume ${records.count()} records")
     CollectionConverters.asScala(records).foldLeft(List.empty[Future[Unit]]) { (acc, record) => {
-      val streamMessageResult = decode[StreamMessage](record.value())
-      streamMessageResult match {
+      decode[StreamMessage](record.value()) match {
         case Right(streamMessage) =>
           val message = streamMessage.message
           DelayQueueService.getCallbacks.get(message.namespace) match {
