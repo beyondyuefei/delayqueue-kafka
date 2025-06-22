@@ -70,6 +70,8 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String], future
               List.empty[Future[Unit]]
           }
 
+          logger.debug(s"futures.nonEmpty: ${futures.nonEmpty}")
+
           // 3. wait Callback Futures result
           if (futures.nonEmpty) {
             val isCallbacksExecuted = try {
@@ -86,9 +88,11 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String], future
                 false
             }
 
+
             if (isCallbacksExecuted) {
               // 4. commit
               try {
+                logger.debug("ready to commit kafka offset")
                 kafkaConsumer.commitSync()
               } catch {
                 case e: Exception =>
@@ -118,7 +122,7 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String], future
 
   private def consumeRecordsWithCallback(records: ConsumerRecords[String, String]): List[Future[Unit]] = {
     logger.debug(s"consume ${records.count()} records")
-    val futures: List[Future[Unit]] = List.empty
+    var futures: List[Future[Unit]] = List.empty
     records.forEach(record => {
       val streamMessageResult = decode[StreamMessage](record.value())
       streamMessageResult match {
@@ -134,7 +138,7 @@ class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String], future
                 case Success(_) => logger.info(s"execute callback for message success: $message")
                 case Failure(ex) => logger.error(s"execute callback for message failed: $message", ex)
               }
-              futures :+ future
+              futures = futures :+ future
             case None => logger.error(s"no callback found for message: $message")
           }
         case Left(error) => logger.error(s"decode streamMessage error, error:$error")
