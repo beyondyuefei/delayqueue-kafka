@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.Properties
 import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
-import scala.:+
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.jdk.javaapi.CollectionConverters
 import scala.util.{Failure, Success}
