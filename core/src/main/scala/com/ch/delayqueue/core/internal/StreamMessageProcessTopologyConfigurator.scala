@@ -37,7 +37,8 @@ private[core] class StreamMessageProcessTopologyConfigurator(kafkaConfig: Intern
 
       // 配置 Kafka Streams
       val props = new Properties()
-      props.put(StreamsConfig.APPLICATION_ID_CONFIG, "delayed-message-stream:" + Objects.requireNonNull(kafkaConfig.appId))
+      // 会作为kafka stream内置的topic name, see: org.apache.kafka.streams.processor.internals.StreamThread.runLoop
+      props.put(StreamsConfig.APPLICATION_ID_CONFIG, "delayed-message-stream-" + Objects.requireNonNull(kafkaConfig.appId))
       props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, Objects.requireNonNull(kafkaConfig.bootstrapServers))
       props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, org.apache.kafka.common.serialization.Serdes.String().getClass)
       props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, org.apache.kafka.common.serialization.Serdes.String().getClass)
