@@ -11,10 +11,10 @@ import org.apache.kafka.streams.{KafkaStreams, StreamsConfig}
 import org.slf4j.LoggerFactory
 
 import java.time.Duration
-import java.util.Properties
+import java.util.{Objects, Properties}
 
 
-private[core] object StreamMessageProcessTopologyConfigurator extends Component {
+private[core] class StreamMessageProcessTopologyConfigurator(kafkaConfig: InternalKafkaConfig) extends Component {
   private var streams: KafkaStreams = _
   private val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -37,8 +37,8 @@ private[core] object StreamMessageProcessTopologyConfigurator extends Component 
 
       // 配置 Kafka Streams
       val props = new Properties()
-      props.put(StreamsConfig.APPLICATION_ID_CONFIG, "delayed-message-stream")
-      props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")
+      props.put(StreamsConfig.APPLICATION_ID_CONFIG, "delayed-message-stream:" + Objects.requireNonNull(kafkaConfig.appId))
+      props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, Objects.requireNonNull(kafkaConfig.bootstrapServers))
       props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, org.apache.kafka.common.serialization.Serdes.String().getClass)
       props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, org.apache.kafka.common.serialization.Serdes.String().getClass)
       // 构建 Kafka Streams 实例

@@ -1,19 +1,17 @@
 package com.ch.delayqueue.core
 
-import org.apache.kafka.clients.consumer.ConsumerConfig
+import com.ch.delayqueue.core.internal.InternalKafkaConfig
 import org.junit.jupiter.api.{Assertions, Test}
 
 class DelayQueueServiceTest {
   @Test
   def sendMessageTest(): Unit = {
     @volatile var value: Option[String] = Option.empty
-    val kafkaConfig = Map("bootstrap.servers" -> "localhost:9092", "linger.ms" -> "1",
-      "key.serializer" -> "org.apache.kafka.common.serialization.StringSerializer",
-      "value.serializer" -> "org.apache.kafka.common.serialization.StringSerializer",
-      "key.deserializer" -> "org.apache.kafka.common.serialization.StringDeserializer",
-      "value.deserializer" -> "org.apache.kafka.common.serialization.StringDeserializer",
-      ConsumerConfig.GROUP_ID_CONFIG -> "delayqueue-consumer-group",
-      ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG -> "false")
+    val kafkaConfig = InternalKafkaConfig(
+      bootstrapServers = "localhost:9092",
+      lingerMs = "10",
+      appId = "test"
+    )
 
     val delayQueueService = DelayQueueService.getInstance(kafkaConfig)
     val orderNamespace = "order_pay_timeout"

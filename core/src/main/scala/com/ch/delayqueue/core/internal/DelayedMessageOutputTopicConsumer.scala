@@ -6,21 +6,28 @@ import com.ch.delayqueue.core.internal.CallbackThreadPool.executionContext
 import com.ch.delayqueue.core.internal.exception.LifecycleException
 import io.circe.generic.auto._
 import io.circe.parser.decode
-import org.apache.kafka.clients.consumer.{ConsumerRecords, KafkaConsumer}
+import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecords, KafkaConsumer}
 import org.apache.kafka.common.errors.{RetriableException, WakeupException}
 import org.slf4j.LoggerFactory
 
 import java.time.Duration
+import java.util.Objects.requireNonNull
 import java.util.Properties
 import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.jdk.javaapi.CollectionConverters
 import scala.util.{Failure, Success}
 
-private[core] class DelayedMessageOutputTopicConsumer(kafkaConfig: Map[String, String], futureTimeoutInSeconds: Long = 1) extends Component {
+private[core] class DelayedMessageOutputTopicConsumer(kafkaConfig: InternalKafkaConfig, futureTimeoutInSeconds: Long = 1) extends Component {
   private val props = {
     val p = new Properties()
-    kafkaConfig.foreach { case (k, v) => p.setProperty(k, v) }
+    p.setProperty("bootstrap.servers", requireNonNull(kafkaConfig.bootstrapServers))
+    p.setProperty("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    p.setProperty("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    p.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+    p.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+    p.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
+    p.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "delayqueue-consumer-group:" + requireNonNull(kafkaConfig.appId))
     p
   }
   private val kafkaConsumer = new KafkaConsumer[String, String](props)

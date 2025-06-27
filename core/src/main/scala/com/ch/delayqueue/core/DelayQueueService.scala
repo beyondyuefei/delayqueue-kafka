@@ -13,10 +13,14 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.immutable
 
-class DelayQueueService private(kafkaConfig: Map[String, String]) extends Lifecycle {
+class DelayQueueService private(kafkaConfig: InternalKafkaConfig) extends Lifecycle {
   private val props = {
     val p = new Properties()
-    kafkaConfig.foreach { case (k, v) => p.setProperty(k, v) }
+    p.setProperty("bootstrap.servers", kafkaConfig.bootstrapServers)
+    p.setProperty("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    p.setProperty("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    p.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+    p.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
     p
   }
   private val kafkaProducer = new KafkaProducer[String, String](props)
@@ -32,7 +36,7 @@ class DelayQueueService private(kafkaConfig: Map[String, String]) extends Lifecy
       return
     }
     childComponents :+= CallbackThreadPool
-    childComponents :+= StreamMessageProcessTopologyConfigurator
+    childComponents :+= new StreamMessageProcessTopologyConfigurator(kafkaConfig)
     childComponents :+= new DelayedMessageOutputTopicConsumer(kafkaConfig)
     childComponents.foreach(_.start())
   }
@@ -64,7 +68,7 @@ class DelayQueueService private(kafkaConfig: Map[String, String]) extends Lifecy
 object DelayQueueService {
   @volatile private var instance: Option[DelayQueueService] = None
 
-  def getInstance(kafkaConfig: Map[String, String]): DelayQueueService = {
+  def getInstance(kafkaConfig: InternalKafkaConfig): DelayQueueService = {
     if (instance.isEmpty) {
       synchronized {
         if (instance.isEmpty) {
