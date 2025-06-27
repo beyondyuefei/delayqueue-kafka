@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 
 // 自定义处理器类
-class DelayedMessageSchedulerProcessor extends Processor[String, String, String, String] {
+private[core] class DelayedMessageSchedulerProcessor extends Processor[String, String, String, String] {
   private var context: ProcessorContext[String, String] = _
   private var store: KeyValueStore[String, String] = _
   private val logger = LoggerFactory.getLogger(classOf[DelayedMessageSchedulerProcessor])

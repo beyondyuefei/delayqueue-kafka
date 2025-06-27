@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.Properties
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.immutable
 
 class DelayQueueService private(kafkaConfig: Map[String, String]) extends Lifecycle {
@@ -22,9 +23,14 @@ class DelayQueueService private(kafkaConfig: Map[String, String]) extends Lifecy
   private type Callback = Message => Unit
   private var callbacks = Map[String, Callback]()
   private var childComponents: List[Lifecycle] = List.empty
+  private val initialized: AtomicBoolean = new AtomicBoolean(false)
   private val logger = LoggerFactory.getLogger(DelayQueueService.getClass)
 
   override def start(): Unit = {
+    if (!initialized.compareAndSet(false, true)) {
+      logger.info("DelayQueueService already started")
+      return
+    }
     childComponents :+= CallbackThreadPool
     childComponents :+= StreamMessageProcessTopologyConfigurator
     childComponents :+= new DelayedMessageOutputTopicConsumer(kafkaConfig)
@@ -32,6 +38,10 @@ class DelayQueueService private(kafkaConfig: Map[String, String]) extends Lifecy
   }
 
   override def stop(): Unit = {
+    if (!initialized.compareAndSet(true, false)) {
+      logger.info("DelayQueueService already stopped")
+      return
+    }
     childComponents.foreach(_.stop())
     kafkaProducer.close(Duration.ofSeconds(3))
   }
