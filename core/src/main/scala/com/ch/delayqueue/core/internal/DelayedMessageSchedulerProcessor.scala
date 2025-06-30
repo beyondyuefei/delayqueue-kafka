@@ -14,8 +14,8 @@ import java.time.Duration
 private[core] class DelayedMessageSchedulerProcessor extends Processor[String, String, String, String] {
   private var context: ProcessorContext[String, String] = _
   private var store: KeyValueStore[String, String] = _
-  private val logger = LoggerFactory.getLogger(classOf[DelayedMessageSchedulerProcessor])
   private val startTime = String.format("%013d", 0)
+  private val logger = LoggerFactory.getLogger(classOf[DelayedMessageSchedulerProcessor])
 
   override def init(context: api.ProcessorContext[String, String]): Unit = {
     this.context = context
