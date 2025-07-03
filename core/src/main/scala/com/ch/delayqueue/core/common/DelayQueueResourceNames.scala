@@ -1,11 +1,12 @@
 package com.ch.delayqueue.core.common
 
 object DelayQueueResourceNames {
-  private val delayQueueInputTopic = "Delay-Queue-Input-Topic"
-  private val storeName = "delayed-messages-store"
-  private val delayQueueOutputTopic = "Delay-Queue-Output-Topic"
-  private val delayQueueConsumerGroup = "delayqueue-consumer-group"
-  private val delayQueueKafkaStreamBuildInTopicName = "delayed-message-stream-topic"
+  private val delayQueuePrefix = "Delay-Queue-"
+  private val delayQueueInputTopic = delayQueuePrefix + "Input-Topic"
+  private val storeName = delayQueuePrefix + "Message-Store"
+  private val delayQueueOutputTopic = delayQueuePrefix + "Output-Topic"
+  private val delayQueueConsumerGroup = delayQueuePrefix + "Consumer-Group"
+  private val delayQueueKafkaStreamBuildInTopicName = delayQueuePrefix + "Message-Stream-Topic"
 
   def getAppDelayQueueInputTopic(appId: String): String = {
     s"$delayQueueInputTopic-$appId"

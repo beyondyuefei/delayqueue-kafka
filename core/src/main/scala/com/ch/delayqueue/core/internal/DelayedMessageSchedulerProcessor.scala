@@ -1,6 +1,5 @@
 package com.ch.delayqueue.core.internal
 
-import com.ch.delayqueue.core.common.DelayQueueResourceNames
 import io.circe.generic.auto._
 import io.circe.parser._
 import org.apache.kafka.streams.processor.api
