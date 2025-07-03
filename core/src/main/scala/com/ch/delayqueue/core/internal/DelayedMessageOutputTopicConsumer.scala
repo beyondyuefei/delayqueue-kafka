@@ -1,7 +1,7 @@
 package com.ch.delayqueue.core.internal
 
 import com.ch.delayqueue.core.DelayQueueService
-import com.ch.delayqueue.core.common.Constants
+import com.ch.delayqueue.core.common.DelayQueueResourceNames
 import com.ch.delayqueue.core.internal.CallbackThreadPool.executionContext
 import com.ch.delayqueue.core.internal.exception.LifecycleException
 import io.circe.generic.auto._
@@ -11,7 +11,6 @@ import org.apache.kafka.common.errors.{RetriableException, WakeupException}
 import org.slf4j.LoggerFactory
 
 import java.time.Duration
-import java.util.Objects.requireNonNull
 import java.util.Properties
 import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
 import scala.concurrent.{Await, Future, TimeoutException}
@@ -21,13 +20,13 @@ import scala.util.{Failure, Success}
 private[core] class DelayedMessageOutputTopicConsumer(kafkaConfig: InternalKafkaConfig, futureTimeoutInSeconds: Long = 1) extends Component {
   private val props = {
     val p = new Properties()
-    p.setProperty("bootstrap.servers", requireNonNull(kafkaConfig.bootstrapServers))
+    p.setProperty("bootstrap.servers", kafkaConfig.bootstrapServers)
     p.setProperty("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
     p.setProperty("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
     p.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
     p.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
     p.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
-    p.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "delayqueue-consumer-group:" + requireNonNull(kafkaConfig.appId))
+    p.setProperty(ConsumerConfig.GROUP_ID_CONFIG, DelayQueueResourceNames.getAppDelayQueueConsumerGroup(kafkaConfig.appId))
     p
   }
   private val kafkaConsumer = new KafkaConsumer[String, String](props)
@@ -37,8 +36,9 @@ private[core] class DelayedMessageOutputTopicConsumer(kafkaConfig: InternalKafka
 
   override def start(): Unit = {
     try {
-      kafkaConsumer.subscribe(CollectionConverters.asJavaCollection(List(Constants.delayQueueOutputTopic)))
-      logger.info(s"kafka consumer component started, subscribe kafka topic: ${Constants.delayQueueOutputTopic}")
+      val delayQueueOutputTopicName = DelayQueueResourceNames.getAppDelayQueueOutputTopic(kafkaConfig.appId)
+      kafkaConsumer.subscribe(CollectionConverters.asJavaCollection(List(delayQueueOutputTopicName)))
+      logger.info(s"kafka consumer component started, subscribe kafka topic: $delayQueueOutputTopicName")
     } catch {
       case e: Exception =>
         logger.error(s"subscribe kafka topic error, error:${e.getMessage}")

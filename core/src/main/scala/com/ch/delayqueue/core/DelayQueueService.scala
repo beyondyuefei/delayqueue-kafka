@@ -1,6 +1,6 @@
 package com.ch.delayqueue.core
 
-import com.ch.delayqueue.core.common.Constants.delayQueueInputTopic
+import com.ch.delayqueue.core.common.DelayQueueResourceNames
 import com.ch.delayqueue.core.internal._
 import io.circe.generic.auto._
 import io.circe.syntax._
@@ -52,7 +52,7 @@ class DelayQueueService private(kafkaConfig: InternalKafkaConfig) extends Lifecy
 
   def executeWithFixedDelay(message: Message, delaySeconds: Long): RecordMetadata = {
     val jsonStrVal = StreamMessage(delaySeconds, message).asJson.noSpaces
-    val producerRecord = new ProducerRecord[String, String](delayQueueInputTopic, message.id, jsonStrVal)
+    val producerRecord = new ProducerRecord[String, String](DelayQueueResourceNames.getAppDelayQueueInputTopic(kafkaConfig.appId), message.id, jsonStrVal)
     val recordMetadata = kafkaProducer.send(producerRecord).get(1, TimeUnit.SECONDS)
     logger.debug(s"topic:${recordMetadata.topic()}, partition:${recordMetadata.partition()}, offset:${recordMetadata.offset()}")
     recordMetadata

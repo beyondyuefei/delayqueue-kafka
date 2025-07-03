@@ -1,6 +1,6 @@
 package com.ch.delayqueue.core.internal
 
-import com.ch.delayqueue.core.common.Constants
+import com.ch.delayqueue.core.common.DelayQueueResourceNames
 import io.circe.generic.auto._
 import io.circe.parser._
 import org.apache.kafka.streams.processor.api
@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
 import java.time.Duration
 
 // 自定义处理器类
-private[core] class DelayedMessageSchedulerProcessor extends Processor[String, String, String, String] {
+private[core] class DelayedMessageSchedulerProcessor(storeName: String) extends Processor[String, String, String, String] {
   private var context: ProcessorContext[String, String] = _
   private var store: KeyValueStore[String, String] = _
   private val startTime = String.format("%013d", 0)
@@ -20,7 +20,7 @@ private[core] class DelayedMessageSchedulerProcessor extends Processor[String, S
   override def init(context: api.ProcessorContext[String, String]): Unit = {
     this.context = context
     // 初始化状态存储
-    store = context.getStateStore(Constants.storeName).asInstanceOf[KeyValueStore[String, String]]
+    store = context.getStateStore(storeName).asInstanceOf[KeyValueStore[String, String]]
     // 调度定时任务，每隔一段时间检查是否有消息需要处理
     context.schedule(Duration.ofMillis(1000), org.apache.kafka.streams.processor.PunctuationType.WALL_CLOCK_TIME, _ => {
       val endTime = String.format("%013d", System.currentTimeMillis()) + "\uffff"
