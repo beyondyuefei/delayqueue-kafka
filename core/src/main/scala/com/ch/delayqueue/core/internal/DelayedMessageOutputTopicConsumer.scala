@@ -26,7 +26,7 @@ private[core] class DelayedMessageOutputTopicConsumer(kafkaConfig: InternalKafka
     p.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
     p.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
     p.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
-    p.setProperty(ConsumerConfig.GROUP_ID_CONFIG, DelayQueueResourceNames.getAppDelayQueueConsumerGroup(kafkaConfig.appId))
+    p.setProperty(ConsumerConfig.GROUP_ID_CONFIG, DelayQueueResourceNames.appDelayQueueConsumerGroup)
     p
   }
   private val kafkaConsumer = new KafkaConsumer[String, String](props)
@@ -36,7 +36,7 @@ private[core] class DelayedMessageOutputTopicConsumer(kafkaConfig: InternalKafka
 
   override def start(): Unit = {
     try {
-      val delayQueueOutputTopicName = DelayQueueResourceNames.getAppDelayQueueOutputTopic(kafkaConfig.appId)
+      val delayQueueOutputTopicName = DelayQueueResourceNames.appDelayQueueOutputTopic
       kafkaConsumer.subscribe(CollectionConverters.asJavaCollection(List(delayQueueOutputTopicName)))
       logger.info(s"kafka consumer component started, subscribe kafka topic: $delayQueueOutputTopicName")
     } catch {

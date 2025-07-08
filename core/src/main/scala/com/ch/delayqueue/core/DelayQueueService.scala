@@ -52,7 +52,7 @@ class DelayQueueService private(kafkaConfig: InternalKafkaConfig) extends Lifecy
 
   def executeWithFixedDelay(message: Message, delaySeconds: Long): RecordMetadata = {
     val jsonStrVal = StreamMessage(delaySeconds, message).asJson.noSpaces
-    val producerRecord = new ProducerRecord[String, String](DelayQueueResourceNames.getAppDelayQueueInputTopic(kafkaConfig.appId), message.id, jsonStrVal)
+    val producerRecord = new ProducerRecord[String, String](DelayQueueResourceNames.appDelayQueueInputTopic, message.id, jsonStrVal)
     val recordMetadata = kafkaProducer.send(producerRecord).get(1, TimeUnit.SECONDS)
     logger.debug(s"topic:${recordMetadata.topic()}, partition:${recordMetadata.partition()}, offset:${recordMetadata.offset()}")
     recordMetadata
@@ -61,6 +61,8 @@ class DelayQueueService private(kafkaConfig: InternalKafkaConfig) extends Lifecy
   def registerCallback(namespace: String, callback: Callback): Unit = {
     callbacks += (namespace -> callback)
   }
+
+  private def getInternalKafkaConfig: InternalKafkaConfig = kafkaConfig
 
   private def getCallback: Map[String, Callback] = callbacks
 }
@@ -80,4 +82,6 @@ object DelayQueueService {
   }
 
   def getCallbacks: immutable.Map[String, Message => Unit] = instance.get.getCallback
+
+  def getInternalKafkaConfig: InternalKafkaConfig = instance.get.getInternalKafkaConfig
 }

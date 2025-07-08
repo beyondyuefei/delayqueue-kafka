@@ -11,7 +11,7 @@ import org.apache.kafka.streams.{KafkaStreams, StreamsConfig}
 import org.slf4j.LoggerFactory
 
 import java.time.Duration
-import java.util.{Objects, Properties}
+import java.util.Properties
 
 
 private[core] class StreamMessageProcessTopologyConfigurator(kafkaConfig: InternalKafkaConfig) extends Component {
@@ -21,7 +21,7 @@ private[core] class StreamMessageProcessTopologyConfigurator(kafkaConfig: Intern
   override def start(): Unit = {
     try {
       val streamsBuilder = new StreamsBuilder()
-      val storeName = DelayQueueResourceNames.getAppDelayQueueStoreName(kafkaConfig.appId)
+      val storeName = DelayQueueResourceNames.appDelayQueueStoreName
       // 定义状态存储
       val storeSupplier = Stores.keyValueStoreBuilder(
         Stores.persistentKeyValueStore(storeName),
@@ -32,14 +32,14 @@ private[core] class StreamMessageProcessTopologyConfigurator(kafkaConfig: Intern
       streamsBuilder.addStateStore(storeSupplier)
       val delayedMessageSchedulerProcessor: ProcessorSupplier[String, String, String, String] = () => new DelayedMessageSchedulerProcessor(storeName)
       // 创建 KStream
-      streamsBuilder.stream[String, String](DelayQueueResourceNames.getAppDelayQueueInputTopic(kafkaConfig.appId))
+      streamsBuilder.stream[String, String](DelayQueueResourceNames.appDelayQueueInputTopic)
         .process(delayedMessageSchedulerProcessor, storeName)
-        .to(DelayQueueResourceNames.getAppDelayQueueOutputTopic(kafkaConfig.appId))
+        .to(DelayQueueResourceNames.appDelayQueueOutputTopic)
 
       // 配置 Kafka Streams
       val props = new Properties()
       // 会作为kafka stream内置的topic name, see: org.apache.kafka.streams.processor.internals.StreamThread.runLoop
-      props.put(StreamsConfig.APPLICATION_ID_CONFIG, DelayQueueResourceNames.getAppDelayQueueKafkaStreamBuildInTopicName(kafkaConfig.appId))
+      props.put(StreamsConfig.APPLICATION_ID_CONFIG, DelayQueueResourceNames.appDelayQueueKafkaStreamBuildInTopicName)
       props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.bootstrapServers)
       props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, org.apache.kafka.common.serialization.Serdes.String().getClass)
       props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, org.apache.kafka.common.serialization.Serdes.String().getClass)
