@@ -3,7 +3,7 @@
 - 在kafka stream之上构建延迟消息队列，天然支持了消息的持久化、高可用、partition水平扩展
 - 提供 SpringBoot starter，开箱即用
 
-### 环境要求**
+### 环境要求
 - Scala 2.13
 - JDK 21+
 - SpringBoot 6.x
