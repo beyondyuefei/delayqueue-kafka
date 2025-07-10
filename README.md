@@ -73,3 +73,8 @@ public class Application {
     }
 }
 ```
+- application.yml
+```
+kafka:
+  app-id: order-service
+```
