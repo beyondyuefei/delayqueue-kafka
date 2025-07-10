@@ -35,6 +35,7 @@ class DelayQueueService private(kafkaConfig: InternalKafkaConfig) extends Lifecy
       logger.info("DelayQueueService already started")
       return
     }
+    DelayQueueResourceNames.initialize(kafkaConfig.appId)
     childComponents :+= CallbackThreadPool
     childComponents :+= new StreamMessageProcessTopologyConfigurator(kafkaConfig)
     childComponents :+= new DelayedMessageOutputTopicConsumer(kafkaConfig)
@@ -62,8 +63,6 @@ class DelayQueueService private(kafkaConfig: InternalKafkaConfig) extends Lifecy
     callbacks += (namespace -> callback)
   }
 
-  private def getInternalKafkaConfig: InternalKafkaConfig = kafkaConfig
-
   private def getCallback: Map[String, Callback] = callbacks
 }
 
@@ -83,5 +82,4 @@ object DelayQueueService {
 
   def getCallbacks: immutable.Map[String, Message => Unit] = instance.get.getCallback
 
-  def getInternalKafkaConfig: InternalKafkaConfig = instance.get.getInternalKafkaConfig
 }
