@@ -28,8 +28,8 @@ class DelayQueueServiceTest {
     Assertions.assertNotNull(record.offset())
     println(s"topic:${record.topic()}, partition:${record.partition()}, offset:${record.offset()}")
     Assertions.assertNotNull(record.offset())
-
-    Thread.sleep(6000)
+    // 如果是重启jvm后马上出发此单测的场景，这里的sleep时间需要改为45s+ ,(@see https://cwiki.apache.org/confluence/display/KAFKA/KIP-735%3A+Increase+default+consumer+session+timeout)，因为启动时需要等待kafka的rebalance完成
+    Thread.sleep(10000)
     delayQueueService.stop()
     Assertions.assertTrue(value.nonEmpty)
   }
