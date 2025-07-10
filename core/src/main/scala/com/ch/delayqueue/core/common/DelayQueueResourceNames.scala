@@ -29,14 +29,29 @@ object DelayQueueResourceNames {
     }
   }
 
-  def appDelayQueueInputTopic: String = instance.appDelayQueueInputTopic
+  def appDelayQueueInputTopic: String = {
+    require(instance != null, "DelayQueueResourceNames is not initialized, Call initialize(appId) method first")
+    instance.appDelayQueueInputTopic
+  }
 
-  def appDelayQueueOutputTopic: String = instance.appDelayQueueOutputTopic
+  def appDelayQueueOutputTopic: String = {
+    require(instance != null, "DelayQueueResourceNames is not initialized, Call initialize(appId) method first")
+    instance.appDelayQueueOutputTopic
+  }
 
-  def appDelayQueueStoreName: String = instance.appDelayQueueStoreName
+  def appDelayQueueStoreName: String = {
+    require(instance != null, "DelayQueueResourceNames is not initialized, Call initialize(appId) method first")
+    instance.appDelayQueueStoreName
+  }
 
-  def appDelayQueueConsumerGroup: String = instance.appDelayQueueConsumerGroup
+  def appDelayQueueConsumerGroup: String = {
+    require(instance != null, "DelayQueueResourceNames is not initialized, Call initialize(appId) method first")
+    instance.appDelayQueueConsumerGroup
+  }
 
-  def appDelayQueueKafkaStreamBuildInTopicName: String = instance.appDelayQueueKafkaStreamBuildInTopicName
+  def appDelayQueueKafkaStreamBuildInTopicName: String = {
+    require(instance != null, "DelayQueueResourceNames is not initialized, Call initialize(appId) method first")
+    instance.appDelayQueueKafkaStreamBuildInTopicName
+  }
 }
 
