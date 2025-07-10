@@ -4,8 +4,10 @@
 - 提供 SpringBoot starter，开箱即用
 
 ### 环境要求**
+- Scala 2.13
 - JDK 21+
 - SpringBoot 6.x
+- kafka 3.9+
 
 ### use demo
 - 以订单延迟消息为例，首先在需要使用延迟消息的地方注入bean: DelayQueueService
