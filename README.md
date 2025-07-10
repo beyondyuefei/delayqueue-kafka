@@ -6,3 +6,68 @@
 ### 环境要求**
 - JDK 21+
 - SpringBoot 6.x
+
+### use demo
+- 以订单延迟消息为例，首先在需要使用延迟消息的地方注入bean: DelayQueueService
+- 通过 delayQueueService.executeWithFixedDelay 方法发送延迟消息，并指定namespace
+```
+import com.ch.delayqueue.core.DelayQueueService;
+import com.ch.delayqueue.core.Message;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
+import java.util.concurrent.ThreadLocalRandom;
+
+@Slf4j
+@Service
+public class OrderService {
+    private final DelayQueueService delayQueueService;
+
+    public OrderService(DelayQueueService delayQueueService) {
+        this.delayQueueService = delayQueueService;
+    }
+
+    @PostConstruct
+    public void  init() {
+        final String orderNamespace = NamespaceConstants.ORDER_PAY_TIMEOUT;
+        delayQueueService.executeWithFixedDelay(new Message(orderNamespace, "5", "fde123_" + ThreadLocalRandom.current().nextLong(9999)), 5);
+        delayQueueService.executeWithFixedDelay(new Message(orderNamespace, "6", "fde456_" + ThreadLocalRandom.current().nextLong(9999)), 9);
+        log.info("send message success");
+    }
+}
+```
+
+- 定义延迟消息回调处理的实现类，必须加上类注解@DelayQueueConsumer并提供与发送延迟消息一致的namespace
+```
+import com.ch.delayqueue.core.Message;
+import com.ch.delayqueue.starter.DelayQueueCallback;
+import com.ch.delayqueue.starter.DelayQueueConsumer;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@DelayQueueConsumer(namespace = NamespaceConstants.ORDER_PAY_TIMEOUT)
+public class OrderDelayQueueCallback implements DelayQueueCallback {
+    @Override
+    public void OnDelayMessageTriggered(Message message) {
+        log.info("order-pay-timeout namespace OnDelayMessageTriggered, message:{}", message);
+    }
+}
+```
+- namespace定义的常量类，不同的namespace代表不同业务域的延迟消息、彼此之间互相隔离
+```
+public class NamespaceConstants {
+    public static final String ORDER_PAY_TIMEOUT = "order-pay-timeout";
+}
+```
+- 应用启动类
+```
+@SpringBootApplication
+@Slf4j
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+        log.info("ch-delayqueue-consumer app start success!");
+    }
+}
+```
