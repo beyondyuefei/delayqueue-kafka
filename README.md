@@ -1,7 +1,7 @@
 ### 主要特性
 - 直接支持秒级精度自定义消息的延迟时间，区别于传统的RocketMQ等只能按照内置预先定义好的延迟等级
 - 在kafka stream之上构建延迟消息队列，天然支持了消息的持久化、高可用、partition水平扩展
-- K-V数据库RocketDB作为local消息缓存层，基于LSM实现延迟消息按过期时间优先的高效范围查询
+- K-V数据库RocksDB作为kafka stream local消息缓存层，基于LSM实现延迟消息按过期时间优先的高效范围查询
 - 提供 SpringBoot starter，开箱即用
 
 ### 环境要求
